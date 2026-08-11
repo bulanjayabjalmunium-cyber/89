@@ -1,0 +1,45 @@
+/* Animasi Zoom Pelan (Ken Burns Effect) */
+@keyframes zoomBackground {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.animate-bg-zoom {
+    animation: zoomBackground 20s ease-in-out infinite;
+}
+
+/* Animasi Teks Muncul dari Bawah (Slide Up & Fade In) */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-1 {
+    animation-delay: 0.2s;
+    opacity: 0;
+}
+.delay-2 {
+    animation-delay: 0.4s;
+    opacity: 0;
+}
+.delay-3 {
+    animation-delay: 0.6s;
+    opacity: 0;
+}

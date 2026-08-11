@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Supermarket & Warung POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- HALAMAN LOGIN -->
+<div id="view-login" class="flex h-screen w-screen overflow-hidden bg-slate-950 font-sans">
+    
+    <!-- Kolom Kiri: Banner Gambar Bergerak (Zoom Otomatis) -->
+    <div class="hidden lg:flex lg:w-7/12 relative overflow-hidden flex-col justify-end p-16">
+        
+        <!-- Elemen Gambar dengan Animasi CSS -->
+        <div class="absolute inset-0 bg-cover bg-center animate-bg-zoom" style="background-image: url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=1920&auto=format&fit=crop');"></div>
+        
+        <!-- Overlay Gradasi Gelap -->
+        <div class="absolute inset-0 bg-gradient-to-tr from-slate-950/95 via-slate-900/60 to-transparent backdrop-blur-[2px]"></div>
+        
+        <!-- Teks Informasi dengan Animasi Bergerak -->
+        <div class="relative z-10 max-w-xl space-y-4">
+            <span class="inline-block px-3.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-semibold tracking-wider uppercase animate-fade-in-up delay-1">Enterprise </span>
+            <h1 class="text-4xl font-black text-white leading-tight tracking-tight animate-fade-in-up delay-2">Modern Store & Minimarket Solutions</h1>
+            <p class="text-slate-300 text-sm leading-relaxed animate-fade-in-up delay-3">Manage your inventory, checkout records, and business transaction reports faster, neater, and more professionally.</p>
+        </div>
+    </div>
+        <div class="w-full lg:w-5/12 flex items-center justify-center bg-white p-8 lg:p-16">
+            <div class="w-full max-w-md space-y-6">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-50 text-blue-600 rounded-xl mb-2 border border-blue-100 shadow-xs">
+                        <i class="fa-solid fa-store text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">MINI MARKET </h2>
+                    <p class="text-xs font-semibold tracking-wider text-gray-400 uppercase">Management System</p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5">Username Administrator</label>
+                        <input type="text" id="input-user" class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" placeholder="Masukkan username">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5">Password Keamanan</label>
+                        <div class="relative">
+                            <input type="password" id="input-pass" class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 pr-10 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" placeholder="Masukkan password">
+                            <button type="button" onclick="togglePasswordLogin()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                                <i id="icon-toggle-pass" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="prosesLogin()" class="w-full bg-[#0082c9] hover:bg-[#006fb0] text-white py-3 rounded-lg font-bold text-sm shadow-md transition transform active:scale-95 cursor-pointer">
+                        AKSES SISTEM
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLIKASI UTAMA -->
+    <div id="view-app" class="hidden flex h-screen overflow-hidden">
+        
+        <!-- Sidebar Navigasi -->
+        <div class="w-64 bg-slate-900 text-white flex flex-col">
+            <div class="p-5 text-xl font-bold border-b border-slate-800 flex items-center space-x-2">
+                <i class="fa-solid fa-store text-blue-500"></i>
+                <span>MINI MARKET </span>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 text-sm">
+                <button onclick="gantiMenu('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 p-2.5 rounded bg-blue-600 text-white">
+                    <i class="fa-solid fa-chart-pie w-5"></i><span id="text-nav-dashboard">Dashboard & Laporan</span>
+                </button>
+                <button onclick="gantiMenu('stok')" id="nav-stok" class="nav-btn w-full flex items-center space-x-3 p-2.5 rounded text-gray-300 hover:bg-slate-800">
+                    <i class="fa-solid fa-boxes-stacked w-5"></i><span id="text-nav-stok">Stok & Input Barang</span>
+                </button>
+                <button onclick="gantiMenu('kasir')" id="nav-kasir" class="nav-btn w-full flex items-center space-x-3 p-2.5 rounded text-gray-300 hover:bg-slate-800">
+                    <i class="fa-solid fa-cash-register w-5"></i><span id="text-nav-kasir">Kasir (PAYMENT)</span>
+                </button>
+                <button onclick="gantiMenu('riwayat')" id="nav-riwayat" class="nav-btn w-full flex items-center space-x-3 p-2.5 rounded text-gray-300 hover:bg-slate-800">
+                    <i class="fa-solid fa-clock-rotate-left w-5"></i><span id="text-nav-riwayat">Riwayat Transaksi</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 py-2 rounded text-sm cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket"></i><span id="text-nav-keluar">Keluar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Konten Utama -->
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-xs">
+                <h2 id="judul-halaman" class="text-lg font-bold text-gray-800 uppercase">Dashboard</h2>
+                
+                <div class="flex items-center space-x-3">
+                    <select id="pilihan-bahasa" onchange="ubahBahasa(this.value)" class="bg-gray-50 border border-gray-300 rounded px-2.5 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <option value="id">🇮🇩 Indonesia (Rp)</option>
+                        <option value="en">🇺🇸 English ($)</option>
+                        <option value="zh">🇹🇼 中文 (NT$)</option>
+                    </select>
+                    <span class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full"><i class="fa-solid fa-user-shield mr-1 text-blue-600"></i> Administrator</span>
+                </div>
+            </header>
+
+            <div class="p-6">
+                <!-- SECTION DASHBOARD -->
+                <div id="section-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-lg shadow-xs border border-gray-200">
+                            <p id="stat-label-omset-harian" class="text-xs text-gray-500 uppercase font-semibold">Omset Harian</p>
+                            <h3 id="stat-omset-harian" class="text-xl font-bold text-gray-800 mt-1">Rp 0</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow-xs border border-gray-200">
+                            <p id="stat-label-laba-harian" class="text-xs text-gray-500 uppercase font-semibold">Bersih Harian (Laba)</p>
+                            <h3 id="stat-laba-harian" class="text-xl font-bold text-emerald-600 mt-1">Rp 0</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow-xs border border-gray-200">
+                            <p id="stat-label-omset-bulanan" class="text-xs text-gray-500 uppercase font-semibold">Omset Bulanan</p>
+                            <h3 id="stat-omset-bulanan" class="text-xl font-bold text-gray-800 mt-1">Rp 0</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow-xs border border-gray-200">
+                            <p id="stat-label-laba-bulanan" class="text-xs text-gray-500 uppercase font-semibold">Bersih Bulanan (Laba)</p>
+                            <h3 id="stat-laba-bulanan" class="text-xl font-bold text-emerald-600 mt-1">Rp 0</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-5 rounded-lg shadow-md">
+                            <p id="stat-label-omset-total" class="text-xs uppercase font-semibold tracking-wider text-blue-200">Total Omset Seluruhnya (Sejak Toko Buka)</p>
+                            <h3 id="stat-omset-total" class="text-2xl font-extrabold mt-1">Rp 0</h3>
+                        </div>
+                        <div class="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white p-5 rounded-lg shadow-md">
+                            <p id="stat-label-laba-total" class="text-xs uppercase font-semibold tracking-wider text-emerald-200">Total Keuntungan Bersih Seluruhnya</p>
+                            <h3 id="stat-laba-total" class="text-2xl font-extrabold mt-1">Rp 0</h3>
+                        </div>
+                    </div>
+
+                    <!-- TAMBAHAN IDE: PERINGATAN STOK MENIPIS DI DASHBOARD -->
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg shadow-xs">
+                        <h4 class="font-bold text-amber-800 text-sm mb-2 flex items-center"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Peringatan Stok Menipis (< 5 pcs)</h4>
+                        <div id="list-stok-menipis" class="text-xs text-amber-700 space-y-1">
+                            <p>Semua stok barang aman.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION STOK -->
+<div id="section-stok" class="hidden space-y-6">
+    <!-- Form Input / Auto Restock -->
+    <div class="bg-white p-5 rounded-lg shadow-xs border border-gray-200">
+        <h3 class="font-bold text-gray-800 mb-4" id="title-input-barang">Input Barang Baru / Restock</h3>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <input type="text" id="form-nama" placeholder="Nama Barang" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="form-modal" placeholder="Harga Modal" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="form-jual" placeholder="Harga Jual" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="form-stok" placeholder="Jumlah Stok" class="border rounded px-3 py-2 text-sm">
+            <button onclick="tambahProdukBaru()" id="btn-simpan-produk" class="bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold py-2 cursor-pointer">Simpan / Restock</button>
+        </div>
+    </div>
+
+    <!-- Tabel Stok Barang -->
+    <div class="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+            <h4 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-boxes-stacked mr-2 text-blue-600"></i>Daftar Stok Barang</h4>
+        </div>
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 border-b">
+                    <th class="p-3">Nama Barang</th>
+                    <th class="p-3">Harga Modal</th>
+                    <th class="p-3">Harga Jual</th>
+                    <th class="p-3">Stok Tersedia</th>
+                    <th class="p-3 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-stok-body"></tbody>
+        </table>
+    </div>
+
+    <!-- TABEL BARU: RIWAYAT RESTOCK / BARANG MASUK -->
+    <div class="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden">
+        <div class="p-4 border-b bg-gray-50">
+            <h4 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-file-circle-plus mr-2 text-emerald-600"></i>Riwayat Restock / Barang Masuk</h4>
+        </div>
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 border-b text-xs">
+                    <th class="p-3">Waktu Restock</th>
+                    <th class="p-3">Nama Barang</th>
+                    <th class="p-3">Jumlah Masuk</th>
+                    <th class="p-3">Stok Akhir</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-riwayat-restock-body">
+                <tr><td colspan="4" class="p-3 text-center text-gray-400">Belum ada riwayat penambahan stok.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+                <!-- SECTION KASIR (POS) -->
+                <div id="section-kasir" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800" id="title-katalog">Katalog Produk</h3>
+                            <!-- TAMBAHAN IDE: KOTAK PENCARIAN PRODUK -->
+                            <div class="w-64">
+                                <input type="text" id="input-cari-produk" oninput="muatGridKasir()" placeholder="Cari nama barang..." class="w-full border border-gray-300 rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div id="grid-produk-kasir" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-xs border border-gray-200 flex flex-col justify-between h-[540px]">
+                        <div>
+                            <h3 class="font-bold text-gray-800 border-b pb-2 mb-3" id="title-keranjang">Keranjang Kasir</h3>
+                            <div id="list-keranjang" class="space-y-2 overflow-y-auto h-56 text-sm pr-1">
+                                <p class="text-gray-400 text-center mt-12">Belum ada item dipilih</p>
+                            </div>
+                        </div>
+                        <div class="border-t pt-3 space-y-2">
+    <div class="flex justify-between font-bold text-base">
+        <span id="label-total">Total:</span>
+        <span id="kasir-total-harga" class="text-red-600">0</span>
+    </div>
+    <div>
+        <!-- TAMBAHKAN id="label-uang-bayar" DI SINI -->
+        <label id="label-uang-bayar" class="block text-[11px] font-semibold text-gray-500 uppercase">Uang Dibayar</label>
+        <input type="number" id="input-uang-bayar" oninput="hitungKembalian()" placeholder="0" class="w-full border rounded px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-blue-500">
+    </div>
+    <div class="flex justify-between font-semibold text-sm bg-gray-50 p-2 rounded">
+        <!-- TAMBAHKAN id="label-kembalian" DI SINI -->
+        <span id="label-kembalian" class="text-gray-600">Kembalian:</span>
+        <span id="kasir-uang-kembalian" class="text-emerald-600">0</span>
+    </div>
+    <button onclick="prosesPembayaranKasir()" id="btn-bayar-cetak" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded font-bold text-sm shadow-xs mt-1 cursor-pointer">
+        Bayar & Cetak Nota
+    </button>
+</div>
+                </div>
+
+               <!-- SECTION RIWAYAT -->
+<div id="section-riwayat" class="hidden space-y-4">
+    <div class="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 border-b">
+                    <th id="th-waktu" class="p-3">Waktu Transaksi</th>
+                    <th id="th-detail" class="p-3">Detail Belanja</th>
+                    <th id="th-omset" class="p-3">Total Omset</th>
+                    <th id="th-laba" class="p-3">Laba Bersih</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-riwayat-body">
+                <tr><td colspan="4" class="p-4 text-center text-gray-400">Belum ada riwayat transaksi.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+    <!-- MODAL STRUK -->
+    <div id="modal-struk" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div class="text-center border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800">MINIMARKET POS</h3>
+                <p class="text-xs text-gray-500">Struk Pembayaran Belanja</p>
+            </div>
+            <div id="isi-struk" class="text-xs space-y-2 font-mono bg-gray-50 p-3 rounded border"></div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="tutupStruk()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded font-semibold text-xs cursor-pointer">Tutup</button>
+                <button onclick="window.print()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-semibold text-xs shadow-xs cursor-pointer">Cetak Nota</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
