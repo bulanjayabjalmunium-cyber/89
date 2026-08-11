@@ -1,4 +1,12 @@
-// KAMUS MULTI-BAHASA & MATA UANG
+// INISIALISASI INDEXEDDB DENGAN DEXIE.JS
+const db = new Dexie("MinimarketPOSDB");
+db.version(1).stores({
+    produk: '++id, nama, modal, jual, stok',
+    transaksi: '++id, waktu, waktuIso, waktuFormatted, detail, totalOmset, totalLaba',
+    restock: '++id, waktuFormatted, namaBarang, jumlahMasuk, stokAkhir'
+});
+
+// KAMUS MULTI-BAHASA
 let bahasaAktif = localStorage.getItem('pos_bahasa') || 'id';
 
 const kamus = {
@@ -100,30 +108,46 @@ const kamus = {
     }
 };
 
-// DATA AWAL / STATE APLIKASI
-let produkList = JSON.parse(localStorage.getItem('pos_produk')) || [
-    { nama: "Minyak Goreng 1L", modal: 14000, jual: 16000, stok: 20 },
-    { nama: "Gula Pasir 1kg", modal: 12500, jual: 14500, stok: 8 },
-    { nama: "Mie Instan (1 Dus)", modal: 95000, jual: 105000, stok: 0 }
-];
-
-let riwayatTransaksi = JSON.parse(localStorage.getItem('pos_riwayat')) || [];
-let riwayatRestock = JSON.parse(localStorage.getItem('pos_riwayat_restock')) || [];
+let produkList = [];
+let riwayatTransaksi = [];
+let riwayatRestock = [];
 let keranjang = [];
 
-function simpanData() {
-    localStorage.setItem('pos_produk', JSON.stringify(produkList));
-    localStorage.setItem('pos_riwayat', JSON.stringify(riwayatTransaksi));
-    localStorage.setItem('pos_riwayat_restock', JSON.stringify(riwayatRestock));
+function getLocalDateString(dateObj = new Date()) {
+    let year = dateObj.getFullYear();
+    let month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    let day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
-// FORMAT MATA UANG OTOMATIS BERDASARKAN BAHASA
+// MEMATIKAN SEED DATA JIKA DB SUDAH TERISI
+async function muatDataDariDB() {
+    let count = await db.produk.count();
+    if (count === 0) {
+        await db.produk.bulkAdd([
+            { nama: "Minyak Goreng 1L", modal: 14000, jual: 16000, stok: 20 },
+            { nama: "Gula Pasir 1kg", modal: 12500, jual: 14500, stok: 8 },
+            { nama: "Mie Instan (1 Dus)", modal: 95000, jual: 105000, stok: 0 }
+        ]);
+    }
+    produkList = await db.produk.toArray();
+    riwayatTransaksi = await db.transaksi.reverse().toArray();
+    riwayatRestock = await db.restock.reverse().toArray();
+
+    perbaruiTampilanBahasa();
+}
+
+// INITIAL LOAD DATA
+document.addEventListener('DOMContentLoaded', () => {
+    muatDataDariDB();
+});
+
 function formatMataUang(angka) {
     let simbol = kamus[bahasaAktif].mataUang;
-    return `${simbol} ${angka.toLocaleString('id-ID')}`;
+    let locale = bahasaAktif === 'en' ? 'en-US' : (bahasaAktif === 'zh' ? 'zh-TW' : 'id-ID');
+    return `${simbol} ${angka.toLocaleString(locale)}`;
 }
 
-// FUNGSI LIHAT / SEMBUNYIKAN PASSWORD
 function togglePasswordLogin() {
     let inputPass = document.getElementById('input-pass');
     let iconPass = document.getElementById('icon-toggle-pass');
@@ -139,7 +163,6 @@ function togglePasswordLogin() {
     }
 }
 
-// UBAH BAHASA & UPDATE UI
 function ubahBahasa(lang) {
     bahasaAktif = lang;
     localStorage.setItem('pos_bahasa', lang);
@@ -167,23 +190,19 @@ function perbaruiTampilanBahasa() {
     if(document.getElementById('title-keranjang')) document.getElementById('title-keranjang').innerText = t.keranjang;
     if(document.getElementById('btn-bayar-cetak')) document.getElementById('btn-bayar-cetak').innerText = t.bayar;
 
-    // LABEL KASIR
     if(document.getElementById('label-total')) document.getElementById('label-total').innerText = (bahasaAktif === 'zh') ? '總計:' : 'Total:';
     if(document.getElementById('label-uang-bayar')) document.getElementById('label-uang-bayar').innerText = (bahasaAktif === 'en') ? 'Amount Paid' : (bahasaAktif === 'zh') ? '实付金额' : 'Uang Dibayar';
     if(document.getElementById('label-kembalian')) document.getElementById('label-kembalian').innerText = (bahasaAktif === 'en') ? 'Change:' : (bahasaAktif === 'zh') ? '找零:' : 'Kembalian:';
 
-    // INPUT BARANG BARU / RESTOCK (JUDUL & PLACEHOLDER)
     if(document.getElementById('title-input-stok')) document.getElementById('title-input-stok').innerText = t.judulInputStok;
     if(document.getElementById('form-nama')) document.getElementById('form-nama').placeholder = t.placeholderNama;
     if(document.getElementById('form-modal')) document.getElementById('form-modal').placeholder = t.placeholderModal;
     if(document.getElementById('form-jual')) document.getElementById('form-jual').placeholder = t.placeholderJual;
     if(document.getElementById('form-stok')) document.getElementById('form-stok').placeholder = t.placeholderStok;
 
-    // PERINGATAN STOK MENIPIS & PENCARIAN
-    if(document.getElementById('title-peringatan-stok')) document.getElementById('title-peringatan-stok').innerText = t.peringatanStok;
+    if(document.getElementById('title-peringatan-stok')) document.getElementById('title-peringatan-stok').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> ${t.peringatanStok}`;
     if(document.getElementById('input-cari-produk')) document.getElementById('input-cari-produk').placeholder = t.placeholderCari;
 
-    // TERJEMAHAN HEADER TABEL RIWAYAT
     if(document.getElementById('th-waktu')) document.getElementById('th-waktu').innerText = t.tabelWaktu;
     if(document.getElementById('th-detail')) document.getElementById('th-detail').innerText = t.tabelDetail;
     if(document.getElementById('th-omset')) document.getElementById('th-omset').innerText = t.tabelOmset;
@@ -197,12 +216,11 @@ function perbaruiTampilanBahasa() {
     muatTabelRiwayat();
 }
 
-// LOGIN SYSTEM
 function prosesLogin() {
     let user = document.getElementById('input-user').value;
     let pass = document.getElementById('input-pass').value;
 
-    if (user === "admin" && pass === "12345") {
+    if (btoa(user) === "YWRtaW4=" && btoa(pass) === "MTIzNDU=") {
         document.getElementById('view-login').classList.add('hidden');
         document.getElementById('view-app').classList.remove('hidden');
         
@@ -229,7 +247,6 @@ function logout() {
     document.getElementById('view-login').classList.remove('hidden');
 }
 
-// NAVIGASI MENU
 function gantiMenu(menu) {
     document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.nav-btn').forEach(el => {
@@ -245,9 +262,8 @@ function gantiMenu(menu) {
     }
 }
 
-// DASHBOARD & LAPORAN + PERINGATAN STOK MENIPIS
 function muatDashboard() {
-    let tglSekarang = new Date().toISOString().slice(0, 10);
+    let tglSekarang = getLocalDateString(new Date()); 
     let blnSekarang = tglSekarang.slice(0, 7);
 
     let omsetHarian = 0, labaHarian = 0;
@@ -255,8 +271,8 @@ function muatDashboard() {
     let omsetTotal = 0, labaTotal = 0;
 
     riwayatTransaksi.forEach(trx => {
-        let tglTrx = trx.waktu.slice(0, 10);
-        let blnTrx = trx.waktu.slice(0, 7);
+        let tglTrx = trx.waktuIso ? trx.waktuIso : getLocalDateString(new Date(trx.waktu));
+        let blnTrx = tglTrx.slice(0, 7);
 
         omsetTotal += trx.totalOmset;
         labaTotal += trx.totalLaba;
@@ -291,41 +307,40 @@ function muatDashboard() {
     }
 }
 
-// STOK BARANG & MANAGEMENT
 function muatTabelStok() {
     let tbody = document.getElementById('tabel-stok-body');
     if(!tbody) return;
-    tbody.innerHTML = '';
 
     if (produkList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Belum ada data barang.</td></tr>`;
         return;
     }
 
-    produkList.forEach((p, index) => {
+    tbody.innerHTML = produkList.map((p) => {
         let statusStokWarna = p.stok < 5 ? "text-red-600 font-extrabold" : "text-blue-600 font-bold";
-        tbody.innerHTML += `
+        return `
             <tr class="border-b hover:bg-gray-50">
                 <td class="p-3 font-semibold text-gray-800">${p.nama}</td>
                 <td class="p-3 text-gray-600">${formatMataUang(p.modal)}</td>
                 <td class="p-3 text-gray-600">${formatMataUang(p.jual)}</td>
                 <td class="p-3 ${statusStokWarna}">${p.stok} pcs</td>
                 <td class="p-3 text-center space-x-1">
-                    <button onclick="tambahStokLangsung(${index})" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer">
+                    <button onclick="tambahStokLangsung(${p.id})" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer">
                         <i class="fa-solid fa-plus-minus mr-1"></i> Restock / Koreksi
                     </button>
-                    <button onclick="hapusProdukDenganSandi(${index})" class="bg-red-100 hover:bg-red-200 text-red-600 px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer">
+                    <button onclick="hapusProdukDenganSandi(${p.id})" class="bg-red-100 hover:bg-red-200 text-red-600 px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer">
                         <i class="fa-solid fa-trash mr-1"></i> Hapus
                     </button>
                 </td>
             </tr>
         `;
-    });
+    }).join('');
 }
 
-// KOREKSI / TAMBAH & KURANG STOK FLEKSIBEL
-function tambahStokLangsung(index) {
-    let produk = produkList[index];
+async function tambahStokLangsung(id) {
+    let produk = produkList.find(p => p.id === id);
+    if(!produk) return;
+
     let inputKoreksi = prompt(
         `KOREKSI / PENYESUAIAN STOK:\n` +
         `Nama: ${produk.nama}\n` +
@@ -351,14 +366,18 @@ function tambahStokLangsung(index) {
     let jenisPerubahan = jumlah > 0 ? "Penambahan (Restock)" : "Pengurangan (Koreksi)";
     produk.stok += jumlah;
 
-    riwayatRestock.unshift({
+    await db.produk.update(id, { stok: produk.stok });
+
+    let restockData = {
         waktuFormatted: new Date().toLocaleString('id-ID'),
         namaBarang: produk.nama,
         jumlahMasuk: jumlah,
         stokAkhir: produk.stok
-    });
+    };
 
-    simpanData();
+    await db.restock.add(restockData);
+    riwayatRestock.unshift(restockData);
+
     muatTabelStok();
     muatTabelRiwayatRestock();
     muatGridKasir();
@@ -367,15 +386,20 @@ function tambahStokLangsung(index) {
     alert(`${jenisPerubahan} berhasil! Stok "${produk.nama}" sekarang menjadi: ${produk.stok} pcs.`);
 }
 
-function hapusProdukDenganSandi(index) {
+async function hapusProdukDenganSandi(id) {
     let sandiInput = prompt("MASUKKAN PASSWORD ADMINISTRATOR UNTUK MENGHAPUS STOK:");
     
-    if (sandiInput === "12345") {
-        let namaBarang = produkList[index].nama;
-        produkList.splice(index, 1);
-        simpanData();
+    if (sandiInput !== null && btoa(sandiInput) === "MTIzNDU=") {
+        let produk = produkList.find(p => p.id === id);
+        let namaBarang = produk ? produk.nama : "";
+
+        await db.produk.delete(id);
+        produkList = produkList.filter(p => p.id !== id);
+        keranjang = keranjang.filter(item => item.nama !== namaBarang);
+
         muatTabelStok();
         muatGridKasir();
+        renderKeranjang();
         muatDashboard();
         alert(`Produk "${namaBarang}" berhasil dihapus.`);
     } else if (sandiInput !== null) {
@@ -383,46 +407,52 @@ function hapusProdukDenganSandi(index) {
     }
 }
 
-function tambahProdukBaru() {
+async function tambahProdukBaru() {
     let nama = document.getElementById('form-nama').value.trim();
     let modal = parseFloat(document.getElementById('form-modal').value);
     let jual = parseFloat(document.getElementById('form-jual').value);
     let stok = parseInt(document.getElementById('form-stok').value);
 
-    if (!nama || isNaN(modal) || isNaN(jual) || isNaN(stok)) {
-        alert("Semua kolom input produk harus diisi dengan benar!");
+    if (!nama || isNaN(modal) || isNaN(jual) || isNaN(stok) || modal < 0 || jual < 0 || stok < 0) {
+        alert("Semua kolom input produk harus diisi dengan angka valid dan positif!");
         return;
     }
 
-    let indexAda = produkList.findIndex(p => p.nama.toLowerCase() === nama.toLowerCase());
+    let produkAda = produkList.find(p => p.nama.toLowerCase() === nama.toLowerCase());
 
-    if (indexAda !== -1) {
-        produkList[indexAda].stok += stok;
-        produkList[indexAda].modal = modal; 
-        produkList[indexAda].jual = jual;
+    if (produkAda) {
+        produkAda.stok += stok;
+        produkAda.modal = modal; 
+        produkAda.jual = jual;
 
-        riwayatRestock.unshift({
+        await db.produk.update(produkAda.id, { stok: produkAda.stok, modal, jual });
+
+        let restockData = {
             waktuFormatted: new Date().toLocaleString('id-ID'),
-            namaBarang: produkList[indexAda].nama,
+            namaBarang: produkAda.nama,
             jumlahMasuk: stok,
-            stokAkhir: produkList[indexAda].stok
-        });
+            stokAkhir: produkAda.stok
+        };
+        await db.restock.add(restockData);
+        riwayatRestock.unshift(restockData);
 
-        alert(`Barang "${produkList[indexAda].nama}" sudah ada. Stok berhasil ditambahkan sebanyak +${stok} pcs!`);
+        alert(`Barang "${produkAda.nama}" sudah ada. Stok berhasil ditambahkan sebanyak +${stok} pcs!`);
     } else {
-        produkList.push({ nama, modal, jual, stok });
+        let newId = await db.produk.add({ nama, modal, jual, stok });
+        produkList.push({ id: newId, nama, modal, jual, stok });
 
-        riwayatRestock.unshift({
+        let restockData = {
             waktuFormatted: new Date().toLocaleString('id-ID'),
             namaBarang: nama,
             jumlahMasuk: stok,
             stokAkhir: stok
-        });
+        };
+        await db.restock.add(restockData);
+        riwayatRestock.unshift(restockData);
 
         alert(`Produk baru "${nama}" berhasil ditambahkan!`);
     }
 
-    simpanData();
     muatTabelStok();
     muatTabelRiwayatRestock();
     muatGridKasir();
@@ -434,22 +464,20 @@ function tambahProdukBaru() {
     document.getElementById('form-stok').value = '';
 }
 
-// RIWAYAT RESTOCK BARANG
 function muatTabelRiwayatRestock() {
     let tbody = document.getElementById('tabel-riwayat-restock-body');
     if(!tbody) return;
-    tbody.innerHTML = '';
 
     if (riwayatRestock.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">Belum ada riwayat penambahan stok.</td></tr>`;
         return;
     }
 
-    riwayatRestock.forEach(item => {
+    tbody.innerHTML = riwayatRestock.map(item => {
         let warnaJumlah = item.jumlahMasuk > 0 ? "text-emerald-600 font-bold" : "text-red-600 font-bold";
         let teksJumlah = item.jumlahMasuk > 0 ? `+${item.jumlahMasuk} pcs` : `${item.jumlahMasuk} pcs`;
 
-        tbody.innerHTML += `
+        return `
             <tr class="border-b hover:bg-gray-50">
                 <td class="p-3 text-gray-600 font-mono text-xs">${item.waktuFormatted}</td>
                 <td class="p-3 font-semibold text-gray-800">${item.namaBarang}</td>
@@ -457,14 +485,12 @@ function muatTabelRiwayatRestock() {
                 <td class="p-3 text-gray-700">${item.stokAkhir} pcs</td>
             </tr>
         `;
-    });
+    }).join('');
 }
 
-// KASIR & POS (DENGAN PENCARIAN PRODUK)
 function muatGridKasir() {
     let grid = document.getElementById('grid-produk-kasir');
     if(!grid) return;
-    grid.innerHTML = '';
 
     let keyword = document.getElementById('input-cari-produk') ? document.getElementById('input-cari-produk').value.toLowerCase() : "";
     let produkFiltered = produkList.filter(p => p.nama.toLowerCase().includes(keyword));
@@ -474,11 +500,9 @@ function muatGridKasir() {
         return;
     }
 
-    produkFiltered.forEach((p) => {
-        let indexAsli = produkList.findIndex(item => item.nama === p.nama);
-
-        grid.innerHTML += `
-            <div onclick="tambahKeKeranjang(${indexAsli})" class="bg-white p-4 rounded-lg shadow-xs border border-gray-200 hover:border-blue-500 cursor-pointer transition flex flex-col justify-between">
+    grid.innerHTML = produkFiltered.map((p) => {
+        return `
+            <div onclick="tambahKeKeranjang(${p.id})" class="bg-white p-4 rounded-lg shadow-xs border border-gray-200 hover:border-blue-500 cursor-pointer transition flex flex-col justify-between">
                 <div>
                     <h4 class="font-bold text-gray-800 text-sm">${p.nama}</h4>
                     <p class="text-xs text-gray-500 mt-1">Stok: ${p.stok}</p>
@@ -489,18 +513,18 @@ function muatGridKasir() {
                 </div>
             </div>
         `;
-    });
+    }).join('');
 }
 
-function tambahKeKeranjang(index) {
+function tambahKeKeranjang(id) {
     bunyiBeep(); 
-    let produk = produkList[index];
-    if (produk.stok <= 0) {
+    let produk = produkList.find(p => p.id === id);
+    if (!produk || produk.stok <= 0) {
         alert("Stok barang habis!");
         return;
     }
 
-    let itemAda = keranjang.find(item => item.index === index);
+    let itemAda = keranjang.find(item => item.id === id);
     if (itemAda) {
         if (itemAda.qty < produk.stok) {
             itemAda.qty++;
@@ -508,7 +532,7 @@ function tambahKeKeranjang(index) {
             alert("Jumlah melebihi stok tersedia!");
         }
     } else {
-        keranjang.push({ index: index, nama: produk.nama, harga: produk.jual, modal: produk.modal, qty: 1 });
+        keranjang.push({ id: produk.id, nama: produk.nama, harga: produk.jual, modal: produk.modal, qty: 1 });
     }
     renderKeranjang();
 }
@@ -516,7 +540,6 @@ function tambahKeKeranjang(index) {
 function renderKeranjang() {
     let list = document.getElementById('list-keranjang');
     if(!list) return;
-    list.innerHTML = '';
 
     if (keranjang.length === 0) {
         list.innerHTML = `<p class="text-gray-400 text-center mt-12">Belum ada item dipilih</p>`;
@@ -525,9 +548,9 @@ function renderKeranjang() {
         return;
     }
 
-    keranjang.forEach((item, idx) => {
+    list.innerHTML = keranjang.map((item, idx) => {
         let subtotal = item.harga * item.qty;
-        list.innerHTML += `
+        return `
             <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
                 <div>
                     <h5 class="font-semibold text-gray-800">${item.nama}</h5>
@@ -540,14 +563,17 @@ function renderKeranjang() {
                 </div>
             </div>
         `;
-    });
+    }).join('');
 
     hitungKembalian();
 }
 
 function ubahQtyKeranjang(idx, delta) {
     let item = keranjang[idx];
-    let stokTersedia = produkList[item.index].stok;
+    if (!item) return;
+
+    let produk = produkList.find(p => p.id === item.id);
+    let stokTersedia = produk ? produk.stok : item.qty;
 
     item.qty += delta;
     if (item.qty > stokTersedia) {
@@ -575,7 +601,7 @@ function hitungKembalian() {
     document.getElementById('kasir-uang-kembalian').innerText = formatMataUang(kembalian >= 0 ? kembalian : 0);
 }
 
-function prosesPembayaranKasir() {
+async function prosesPembayaranKasir() {
     if (keranjang.length === 0) {
         alert("Keranjang masih kosong!");
         return;
@@ -592,23 +618,33 @@ function prosesPembayaranKasir() {
 
     bunyiSukses(); 
 
-    keranjang.forEach(item => {
-        produkList[item.index].stok -= item.qty;
-    });
+    for (let item of keranjang) {
+        let p = produkList.find(prod => prod.id === item.id);
+        if (p) {
+            p.stok -= item.qty;
+            await db.produk.update(p.id, { stok: p.stok });
+        }
+    }
 
     let totalLaba = totalAkhir - totalModal;
-    let waktuStr = new Date().toLocaleString('id-ID');
+    let sekarang = new Date();
+    let waktuStr = sekarang.toLocaleString('id-ID');
+    let waktuIsoFormat = getLocalDateString(sekarang); 
     let detailStr = keranjang.map(i => `${i.nama} (${i.qty}x)`).join(', ');
 
-    riwayatTransaksi.unshift({
-        waktu: new Date().toISOString(),
+    let trxData = {
+        waktu: sekarang.toISOString(),
+        waktuIso: waktuIsoFormat,
         waktuFormatted: waktuStr,
         detail: detailStr,
         totalOmset: totalAkhir,
         totalLaba: totalLaba
-    });
+    };
 
-    simpanData();
+    let newTrxId = await db.transaksi.add(trxData);
+    trxData.id = newTrxId;
+    riwayatTransaksi.unshift(trxData);
+
     muatDashboard();
     muatTabelStok();
     muatGridKasir();
@@ -636,11 +672,9 @@ function tutupStruk() {
     document.getElementById('modal-struk').classList.add('hidden');
 }
 
-// RIWAYAT TRANSAKSI PENJUALAN (DENGAN BARIS TOTAL)
 function muatTabelRiwayat() {
     let tbody = document.getElementById('tabel-riwayat-body');
     if(!tbody) return;
-    tbody.innerHTML = '';
 
     if (riwayatTransaksi.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">Belum ada riwayat transaksi.</td></tr>`;
@@ -650,11 +684,11 @@ function muatTabelRiwayat() {
     let totalOmsetSemua = 0;
     let totalLabaSemua = 0;
 
-    riwayatTransaksi.forEach(trx => {
+    let rowsHtml = riwayatTransaksi.map(trx => {
         totalOmsetSemua += trx.totalOmset;
         totalLabaSemua += trx.totalLaba;
 
-        tbody.innerHTML += `
+        return `
             <tr class="border-b hover:bg-gray-50">
                 <td class="p-3 text-gray-600">${trx.waktuFormatted}</td>
                 <td class="p-3 text-gray-800">${trx.detail}</td>
@@ -662,19 +696,20 @@ function muatTabelRiwayat() {
                 <td class="p-3 font-bold text-emerald-600">${formatMataUang(trx.totalLaba)}</td>
             </tr>
         `;
-    });
+    }).join('');
 
     let t = kamus[bahasaAktif];
-    tbody.innerHTML += `
+    let totalRowHtml = `
         <tr class="bg-gray-100 font-bold border-t-2 border-gray-300">
             <td colspan="2" class="p-3 text-right text-gray-800 uppercase text-xs">${t.totalKeseluruhan}</td>
             <td class="p-3 text-gray-900">${formatMataUang(totalOmsetSemua)}</td>
             <td class="p-3 text-emerald-700">${formatMataUang(totalLabaSemua)}</td>
         </tr>
     `;
+
+    tbody.innerHTML = rowsHtml + totalRowHtml;
 }
 
-// EFEK SUARA DIGITAL BARCODE & KASIR
 function bunyiBeep() {
     try {
         let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -695,6 +730,8 @@ function bunyiBeep() {
         
         osc.start(now);
         osc.stop(now + 0.08);
+
+        setTimeout(() => audioCtx.close(), 200);
     } catch (e) {}
 }
 
@@ -702,7 +739,6 @@ function bunyiSukses() {
     try {
         let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let now = audioCtx.currentTime;
-        
         let notes = [523.25, 659.25, 783.99, 1046.50]; 
         
         notes.forEach((freq, index) => {
@@ -721,5 +757,7 @@ function bunyiSukses() {
             osc.start(now + (index * 0.07));
             osc.stop(now + (index * 0.07) + 0.2);
         });
+
+        setTimeout(() => audioCtx.close(), 600);
     } catch (e) {}
 }
